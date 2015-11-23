@@ -1,19 +1,36 @@
-# DiscordBot
+# FuccBot - based off of <a href="https://github.com/chalda/DiscordBot">Chalda's DiscordBot</a>
 A chat bot for discord app based off <a href="https://github.com/hydrabolt/discord.js/">discord.js</a>
 
-# Features:
-- !gif query => returns a gif example !gif cute cats doing stuff
-- !google query => search google and return the first result
-- !ud query => search google with site:urbandictionary and returns the first result (works fine)
+# Original Features:
+Upgraded core to run with Discord.Js 5.0
+- !gif query => returns a gif example !gif cute cats doing stuff (from giphy)
 - !image query => returns an image (careful, no adult filter)
 - !youtube query => returns a youtube link
 - !wiki query => returns the summary of the first search result on Wikipedia
 - !reddit query => returns the top post on reddit for the given subreddit (or blank for front-page)
-- !meme memetype "text1" "text2" => returns a meme image. notice the quotes around text, they are vitally important
+- !meme memetype "text1" "text2" => Meme Generator. returns a URL to an image. notice the quotes around text, they are CRUCIAL, very important.
+- !meme => with no arguments, prints a list of available memes to use for the meme generator.
 - !help => prints all commands with usage and description;
 - @botname => responds when @mentioned
+Commands added by genBTC:
+- !google query => search google and return the first result
+- !ud query => search google with site:urbandictionary and returns the first result (works fine)
+# Features added by genBTC:
+- Responds perfectly in a private message, and also any !help commands get responded to in PM to not clutter chat.
+- Rate Limit/Flood Protection. Variables are shown in Line 215 ratelimitnum (X),Line 216 ratelimitspan (Y). 
+- The Rate limit will trigger if the same person has issued more than (X) commands in (Y) seconds. If they exceed this limit, they will have to wait for (Y) seconds. If they issue another command, the waiting period resets and they have to wait an additional full (Y) seconds.
+- DNB Sperg Alert for a person named TomSuns, any message with "DNB" in it will cause the bot to give a channel-wide text alert.
+
+Notes: When a "Disconnected" event is received, you can choose to process.exit() or re-login. I chose process.exit() because the bot is running inside a batch file called Launch.bat which was provided, and that will just re-launch the bot if it dies. I did not bother to look up how to properly do a loop in batch-script, so LOL. maybe will fix this later now that I posted it online its sort of embarassing.
+
+Notes: Discord.JS 5.00 had an error in the "presence" event, and this version has a patch to continue logging status changes to the text file.
+
+Notes: unused-commands.txt contain all of the original commands that I had commented out because I don't need. (except !stock, i deleted that one accidentally).
+## Todo:
+    Add a Config.js File containing all the variables, just as a re-factoring/seperation/isolation decision.
 
 ## RSS:
+    NOTE: feeds are commented out @ Line 202 of discord_bot.js - loadFeeds()
     you can create an rss.json file adding rss feeds as commands. See rss.json.example for details
 
 # Instructions
