@@ -12,7 +12,7 @@ function WolframPlugin () {
 WolframPlugin.prototype.respond = function (query, channel, bot) {
 	this.wolfram.query(query, function(error, result) {
 			if (error) {
-				//winston.error("Error querying youtube: " + error);
+				//winston.error("Error querying WolframAlpha: " + error);
 				console.log(error);
 			}
 			else {

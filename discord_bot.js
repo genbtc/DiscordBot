@@ -1,8 +1,5 @@
-/*
-	this bot is a ping pong bot, and every time a message
-	beginning with "ping" is sent, it will reply with
-	"pong".
-*/
+// Get the email and password of the account
+var AuthDetails = require("./auth.json");
 
 var Discord = require("discord.js");
 
@@ -15,19 +12,19 @@ var google_image_plugin = new gi();
 var wa = require("./wolfram_plugin");
 var wolfram_plugin = new wa();
 
-// Get the email and password
-var AuthDetails = require("./auth.json");
+var gs = require("./google_plugin");
+var google_plugin = new gs();
+
 var qs = require("querystring");
 
 var htmlToText = require('html-to-text');
 
-var config = {
+var giphyconfig = {
     "api_key": "dc6zaTOxFJmzC",
     "rating": "r",
     "url": "http://api.giphy.com/v1/gifs/search",
     "permission": ["NORMAL"]
 };
-
 
 //https://api.imgflip.com/popular_meme_ids
 var meme = {
@@ -42,15 +39,9 @@ var meme = {
 	"drevil": 40945639,
 	"skeptical": 101711,
 	"notime": 442575,
-	"yodawg": 101716
-};
-
-var game_abbreviations = {
-    "cs": "Counter-Strike",
-    "hon": "Heroes of Newerth",
-    "hots": "Heroes of the Storm",
-    "sc2": "Starcraft II",
-    "gta": "Grand Theft Auto"
+	"yodawg": 101716,
+    "pepe": 33824827,
+    "penguin": 39683168
 };
 
 var commands = {
@@ -68,144 +59,50 @@ var commands = {
 			}
 		    });
 		}
-	},
-    "ping": {
-        description: "responds pong, useful for checking if bot is alive",
-        process: function(bot, msg, suffix) {
-            bot.sendMessage(msg.channel, msg.sender+" pong!");
-            if(suffix){
-                bot.sendMessage(msg.channel, "note that !ping takes no arguments!");
-            }
-        }
-    },
-    "game": {
-        usage: "<name of game>",
-        description: "pings channel asking if anyone wants to play",
-        process: function(bot,msg,suffix){
-            var game = game_abbreviations[suffix];
-            if(!game) {
-                game = suffix;
-            }
-            bot.sendMessage(msg.channel, "@everyone Anyone up for " + game + "?");
-            console.log("sent game invites for " + game);
-        }
-    },
-    "servers": {
-        description: "lists servers bot is connected to",
-        process: function(bot,msg){bot.sendMessage(msg.channel,bot.servers);}
-    },
-    "channels": {
-        description: "lists channels bot is connected to",
-        process: function(bot,msg) { bot.sendMessage(msg.channel,bot.channels);}
-    },
-    "myid": {
-        description: "returns the user id of the sender",
-        process: function(bot,msg){bot.sendMessage(msg.channel,msg.author.id);}
-    },
-    "idle": {
-        description: "sets bot status to idle",
-        process: function(bot,msg){ bot.setStatusIdle();}
-    },
-    "online": {
-        description: "sets bot status to online",
-        process: function(bot,msg){ bot.setStatusOnline();}
-    },
+	},    
     "youtube": {
         usage: "<video tags>",
         description: "gets youtube video matching tags",
         process: function(bot,msg,suffix){
-            youtube_plugin.respond(suffix,msg.channel,bot);
-        }
+            youtube_plugin.respond(suffix,msg.channel,bot);        }
     },
-    "say": {
-        usage: "<message>",
-        description: "bot says message",
-        process: function(bot,msg,suffix){ bot.sendMessage(msg.channel,suffix,true);}
+    "ud": {
+        usage: "<google searches urbandictionary>",
+        description: "gets first result off UD through google",
+        process: function(bot,msg,suffix){
+            google_plugin.respond("site:urbandictionary.com " + suffix,msg.channel,bot);        }
+    },    
+    "google": {
+        usage: "<google search>",
+        description: "gets first result from google",
+        process: function(bot,msg,suffix){
+            google_plugin.respond(suffix,msg.channel,bot);        }
     },
     "image": {
         usage: "<image tags>",
         description: "gets image matching tags from google",
-        process: function(bot,msg,suffix){ google_image_plugin.respond(suffix,msg.channel,bot);}
-    },
-    "pullanddeploy": {
-        description: "bot will perform a git pull master and restart with the new code",
-        process: function(bot,msg,suffix) {
-            bot.sendMessage(msg.channel,"fetching updates...",function(error,sentMsg){
-                console.log("updating...");
-	            var spawn = require('child_process').spawn;
-                var log = function(err,stdout,stderr){
-                    if(stdout){console.log(stdout);}
-                    if(stderr){console.log(stderr);}
-                };
-                var fetch = spawn('git', ['fetch']);
-                fetch.stdout.on('data',function(data){
-                    console.log(data.toString());
-                });
-                fetch.on("close",function(code){
-                    var reset = spawn('git', ['reset','--hard','origin/master']);
-                    reset.stdout.on('data',function(data){
-                        console.log(data.toString());
-                    });
-                    reset.on("close",function(code){
-                        var npm = spawn('npm', ['install']);
-                        npm.stdout.on('data',function(data){
-                            console.log(data.toString());
-                        });
-                        npm.on("close",function(code){
-                            console.log("goodbye");
-                            bot.sendMessage(msg.channel,"brb!",function(){
-                                bot.logout(function(){
-                                    process.exit();
-                                });
-                            });
-                        });
-                    });
-                });
-            });
-        }
+        process: function(bot,msg,suffix){ 
+            google_image_plugin.respond(suffix,msg.channel,bot);    }
     },
     "meme": {
         usage: 'meme "top text" "bottom text"',
+        description: "Generates a meme image (Quotes are required). Help: type !meme to list available memes.",
         process: function(bot,msg,suffix) {
+            if(!suffix) {
+                var str = "Currently available memes:\n"
+                for (var m in meme){
+                    str += m + "\n"
+                }
+                bot.sendMessage(msg.author,str);
+            }        
             var tags = msg.content.split('"');
             var memetype = tags[0].split(" ")[1];
-            //bot.sendMessage(msg.channel,tags);
             var Imgflipper = require("imgflipper");
             var imgflipper = new Imgflipper(AuthDetails.imgflip_username, AuthDetails.imgflip_password);
             imgflipper.generateMeme(meme[memetype], tags[1]?tags[1]:"", tags[3]?tags[3]:"", function(err, image){
-                //console.log(arguments);
                 bot.sendMessage(msg.channel,image);
             });
         }
-    },
-    "memehelp": { //TODO: this should be handled by !help
-        description: "returns available memes for !meme",
-        process: function(bot,msg) {
-            var str = "Currently available memes:\n"
-            for (var m in meme){
-                str += m + "\n"
-            }
-            bot.sendMessage(msg.channel,str);
-        }
-    },
-    "version": {
-        description: "returns the git commit this bot is running",
-        process: function(bot,msg,suffix) {
-            var commit = require('child_process').spawn('git', ['log','-n','1']);
-            commit.stdout.on('data', function(data) {
-                bot.sendMessage(msg.channel,data);
-            });
-            commit.on('close',function(code) {
-                if( code != 0){
-                    bot.sendMessage(msg.channel,"failed checking git version!");
-                }
-            });
-        }
-    },
-    "log": {
-        usage: "<log message>",
-        description: "logs message to bot console",
-        process: function(bot,msg,suffix){console.log(msg.content);}
     },
     "wiki": {
         usage: "<search terms>",
@@ -232,100 +129,6 @@ var commands = {
                 });
             },function(err){
                 bot.sendMessage(msg.channel,err);
-            });
-        }
-    },
-    "join-server": {
-        usage: "<invite>",
-        description: "joins the server it's invited to",
-        process: function(bot,msg,suffix) {
-            console.log(bot.joinServer(suffix,function(error,server) {
-                console.log("callback: " + arguments);
-                if(error){
-                    bot.sendMessage(msg.channel,"failed to join: " + error);
-                } else {
-                    console.log("Joined server " + server);
-                    bot.sendMessage(msg.channel,"Successfully joined " + server);
-                }
-            }));
-        }
-    },
-    "create": {
-        usage: "<text|voice> <channel name>",
-        description: "creates a channel with the given type and name.",
-        process: function(bot,msg,suffix) {
-            var args = suffix.split(" ");
-            var type = args.shift();
-            if(type != "text" && type != "voice"){
-                bot.sendMessage(msg.channel,"you must specify either voice or text!");
-                return;
-            }
-            bot.createChannel(msg.channel.server,args.join(" "),type, function(error,channel) {
-                if(error){
-                    bot.sendMessage(msg.channel,"failed to create channel: " + error);
-                } else {
-                    bot.sendMessage(msg.channel,"created " + channel);
-                }
-            });
-        }
-    },
-    "delete": {
-        usage: "<channel name>",
-        description: "deletes the specified channel",
-        process: function(bot,msg,suffix) {
-            var channel = bot.getChannel("name",suffix);
-            bot.sendMessage(msg.channel.server.defaultChannel, "deleting channel " + suffix + " at " +msg.author + "'s request");
-            if(msg.channel.server.defaultChannel != msg.channel){
-                bot.sendMessage(msg.channel,"deleting " + channel);
-            }
-            bot.deleteChannel(channel,function(error,channel){
-                if(error){
-                    bot.sendMessage(msg.channel,"couldn't delete channel: " + error);
-                } else {
-                    console.log("deleted " + suffix + " at " + msg.author + "'s request");
-                }
-            });
-        }
-    },
-    "stock": {
-        usage: "<stock to fetch>",
-        process: function(bot,msg,suffix) {
-            var yahooFinance = require('yahoo-finance');
-            yahooFinance.snapshot({
-              symbol: suffix,
-              fields: ['s', 'n', 'd1', 'l1', 'y', 'r'],
-            }, function (error, snapshot) {
-                if(error){
-                    bot.sendMessage(msg.channel,"couldn't get stock: " + error);
-                } else {
-                    //bot.sendMessage(msg.channel,JSON.stringify(snapshot));
-                    bot.sendMessage(msg.channel,snapshot.name
-                        + "\nprice: $" + snapshot.lastTradePriceOnly);
-                }  
-            });
-        }
-    },
-	"wolfram": {
-		usage: "<search terms>",
-        description: "gives results from wolframalpha using search terms",
-        process: function(bot,msg,suffix){
-			if(!suffix){
-				bot.sendMessage(msg.channel,"Usage: !wolfram <search terms> (Ex. !wolfram integrate 4x)");
-			}
-            wolfram_plugin.respond(suffix,msg.channel,bot);
-        }
-	},
-    "rss": {
-        description: "lists available rss feeds",
-        process: function(bot,msg,suffix) {
-            /*var args = suffix.split(" ");
-            var count = args.shift();
-            var url = args.join(" ");
-            rssfeed(bot,msg,url,count,full);*/
-            bot.sendMessage(msg.channel,"Available feeds:", function(){
-                for(var c in rssFeeds){
-                    bot.sendMessage(msg.channel,c + ": " + rssFeeds[c].url);
-                }
             });
         }
     },
@@ -396,21 +199,26 @@ function rssfeed(bot,msg,url,count,full){
 var bot = new Discord.Client();
 
 bot.on("ready", function () {
-    loadFeeds();
+    //loadFeeds();
 	console.log("Ready to begin! Serving in " + bot.channels.length + " channels");
 });
 
 bot.on("disconnected", function () {
-
 	console.log("Disconnected!");
 	process.exit(1); //exit node.js with an error
-	
+    //
+    //bot.login(AuthDetails.email, AuthDetails.password);
 });
+
+var lastmsgnameandtime = {};
+var commandcount = {};
+var ratelimitnum = 5;
+var ratelimitspan = 25;
 
 bot.on("message", function (msg) {
 	//check if message is a command
-	if(msg.author.id != bot.user.id && (msg.content[0] === '!' || msg.content.indexOf(bot.user.mention()) == 0)){
-        console.log("treating " + msg.content + " from " + msg.author + " as command");
+	if(msg.author.id != bot.user.id && msg.content[0] === '!'){// || msg.content.indexOf(bot.user.mention()) == 0)){
+        console.log(msg.author.username + " " + msg.content);
 		var cmdTxt = msg.content.split(" ")[0].substring(1);
         var suffix = msg.content.substring(cmdTxt.length+2);//add one for the ! and one for the space
         if(msg.content.indexOf(bot.user.mention()) == 0){
@@ -421,80 +229,108 @@ bot.on("message", function (msg) {
         if(cmdTxt === "help"){
             //help is special since it iterates over the other commands
             for(var cmd in commands) {
-                var info = "!" + cmd;
+                var info = "__**!" + cmd + "**__";
                 var usage = commands[cmd].usage;
                 if(usage){
-                    info += " " + usage;
+                    info += " *" + usage + "*";
                 }
                 var description = commands[cmd].description;
                 if(description){
                     info += "\n\t" + description;
                 }
-                bot.sendMessage(msg.channel,info);
+                bot.sendMessage(msg.author,info);
             }
         }
 		else if(cmd) {
-            cmd.process(bot,msg,suffix);
-		} else {
-			bot.sendMessage(msg.channel, "Invalid command " + cmdTxt);
-		}
+            //Begin Flood Protection
+            var author = msg.author.username;
+            //if current command is within the ratelimitspan (POSSIBLY too soon since last message)
+            if(msg.timestamp < (ratelimitspan*1000 + lastmsgnameandtime[author])){
+                //if the commandcount is LESS than the ratelimit
+                if(commandcount[author] < ratelimitnum)
+                    cmd.process(bot,msg,suffix);    //process their command
+                //if its equal or over (>=) (includes = because count starts at 0, and is incremented AFTER the condition).
+                else {
+                    //dont process the command, and instead send them a message saying rate-limited.
+                    var ratestring = " (" + ratelimitnum + " messages per " + ratelimitspan + "seconds)";
+                    bot.sendMessage(msg.channel,"Rate Limit exceeded by " + msg.author.username + ratestring + 
+                                    ". Please wait " + ratelimitspan + " seconds.");
+                }
+                commandcount[author]++;     //increment the count
+            }
+            //or else they've waited for enough time, so
+            else {
+                cmd.process(bot,msg,suffix);    //process their command
+                commandcount[author] = 1;   //reset count to 1, since we just processed a command. (or could be the first message).
+            }
+            lastmsgnameandtime[author] = msg.timestamp; //always store the timestamp regardless .
+            //End Flood Protecton
+		} else
+			bot.sendMessage(msg.channel, "Invalid command: " + cmdTxt);
 	} else {
 		//message isn't a command or is from us
         //drop our own messages to prevent feedback loops
         if(msg.author == bot.user){
             return;
         }
-        
+        if(msg.author.username == 'TomSuns'){
+            if(msg.content.toUpperCase().indexOf('DNB') > -1) {
+                bot.sendMessage(msg.channel,"__***DnB SPERG ALERT***__");
+            }
+        }
         if (msg.author != bot.user && msg.isMentioned(bot.user)) {
-                bot.sendMessage(msg.channel,msg.author + ", you called?");
+                bot.sendMessage(msg.channel, msg.author.mention() + " you said what about me?");
         }
     }
 });
  
 
-//Log user status changes
-bot.on("presence", function(data) {
-	//if(status === "online"){
-	//console.log("presence update");
-	console.log(data.user+" went "+data.status);
-	//}
+//Log user status changes (only shows online now)
+bot.on("presence", function(user,status,gameid) {
+	console.log(user.username+" went "+status);
+});
+//Log user status changes (only shows offline/idles now)
+bot.on("userUpdate", function(user,presenceUser,status) {
+	console.log(user.username+" went "+status);
+});
+bot.on("warn", function(message) {
+	console.log("Warning: "+message);
+});
+bot.on("debug", function(message) {
+	console.log("Debug: "+message);
 });
 
 function get_gif(tags, func) {
-        //limit=1 will only return 1 gif
-        var params = {
-            "api_key": config.api_key,
-            "rating": config.rating,
-            "format": "json",
-            "limit": 1
-        };
-        var query = qs.stringify(params);
+    var request = require('request');
+    //limit=1 will only return 1 gif
+    var params = {
+        "api_key": giphyconfig.api_key,
+        "rating": giphyconfig.rating,
+        "format": "json",
+        "limit": 1
+    };
+    var query = qs.stringify(params);
 
-        if (tags !== null) {
-            query += "&q=" + tags.join('+')
-        }
-
-        //wouldnt see request lib if defined at the top for some reason:\
-        var request = require("request");
-        //console.log(query)
-
-        request(config.url + "?" + query, function (error, response, body) {
-            //console.log(arguments)
-            if (error || response.statusCode !== 200) {
-                console.error("giphy: Got error: " + body);
-                console.log(error);
-                //console.log(response)
-            }
-            else {
-                var responseObj = JSON.parse(body)
-                console.log(responseObj.data[0])
-                if(responseObj.data.length){
-                    func(responseObj.data[0].id);
-                } else {
-                    func(undefined);
-                }
-            }
-        }.bind(this));
+    if (tags !== null) {
+        query += "&q=" + tags.join('+')
     }
+
+    request(giphyconfig.url + "?" + query, function (error, response, body) {
+        if (error || response.statusCode !== 200) {
+            console.error("giphy: Got error: " + body);
+            console.log(error);
+        }
+        else {
+            var responseObj = JSON.parse(body);
+            if(responseObj.data.length){
+                console.log("giphy: Url was: " + responseObj.data[0].url);
+                func(responseObj.data[0].id);
+            } else {
+                console.log("giphy: gif not found?");
+                func(undefined);
+            }
+        }
+    }.bind(this));
+}
 
 bot.login(AuthDetails.email, AuthDetails.password);
