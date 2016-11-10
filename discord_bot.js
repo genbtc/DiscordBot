@@ -1,8 +1,7 @@
-// Get the email and password of the account
-var AuthDetails = require("./auth.json");
+// Get the email and password of the account,and other info.
+var ConfigFile = require("./config.json");
 
-var Discord = require("discord.js");
-
+//Include relevant requires:
 var yt = require("./youtube_plugin");
 var youtube_plugin = new yt();
 
@@ -15,34 +14,19 @@ var wolfram_plugin = new wa();
 var gs = require("./google_plugin");
 var google_plugin = new gs();
 
-var qs = require("querystring");
-
+var querystr = require("querystring");
 var htmlToText = require('html-to-text');
 
-var giphyconfig = {
-	"api_key": "dc6zaTOxFJmzC",
-	"rating": "r",
-	"url": "http://api.giphy.com/v1/gifs/search",
-	"permission": ["NORMAL"]
-};
-
 //https://api.imgflip.com/popular_meme_ids
-var meme = {
-	"brace": 61546,
-	"mostinteresting": 61532,
-	"fry": 61520,
-	"onedoesnot": 61579,
-	"yuno": 61527,
-	"success": 61544,
-	"allthethings": 61533,
-	"doge": 8072285,
-	"drevil": 40945639,
-	"skeptical": 101711,
-	"notime": 442575,
-	"yodawg": 101716,
-	"pepe": 33824827,
-	"penguin": 39683168
-};
+var memes = require("./memes.json");
+
+//variables to store the temporary flood protection data in
+var global_lastmsgnameandtime = {};
+var global_commandcount = {};
+
+//Instantiate the discord.js and create the bot client
+var Discord = require("discord.js");
+var bot = new Discord.Client();
 
 var commands = {
 	"gif": {
@@ -66,6 +50,12 @@ var commands = {
 		process: function(bot,msg,suffix){
 			youtube_plugin.respond(suffix,msg.channel,bot);		   }
 	},
+	"sc": {
+		usage: "<google searches soundcloud>",
+		description: "gets first result off SC through google",
+		process: function(bot,msg,suffix){
+			google_plugin.respond("site:soundcloud.com " + suffix,msg.channel,bot);		}
+	},    
 	"ud": {
 		usage: "<google searches urbandictionary>",
 		description: "gets first result off UD through google",
@@ -85,21 +75,47 @@ var commands = {
 			google_image_plugin.respond(suffix,msg.channel,bot);	}
 	},
 	"meme": {
-		usage: 'meme "top text" "bottom text"',
-		description: "Generates a meme image (Quotes are required). Help: type !meme to list available memes.",
+		usage: 'memename "top text" "bottom text"',
+		description: "Generates a meme image (Quotes are required). For Help: type !meme to list available memes (long).",
 		process: function(bot,msg,suffix) {
+            //check if command was blank.
 			if(!suffix) {
-				var str = "Currently available memes:\n"
-				for (var m in meme){
-					str += m + "\n"
-				}
+                var i = 1;
+				bot.sendMessage(msg.author,"Currently available memes:");
+                var str = "Page" + i + ":\n";
+                //iterate list of memes
+				Object.keys(memes).forEach(function(key) {
+                    //make sure message length does not exceed 2000 chars
+                    //in this case, 1100 splits my list in half evenly.
+					if(str.length + key.length + 2 < 1100){
+                        str += key + "\n";
+                    }else{
+                        //use multiple messages for any overly long messages.
+                        bot.sendMessage(msg.author,str);
+                        i++;
+                        str = "Page" + i + ":\n";
+                        str += key + "\n";                        
+                    }
+				});
 				bot.sendMessage(msg.author,str);
-			}		 
+                bot.sendMessage(msg.author,'example: !meme Doge "Top-Text" "Bottom-Text"');                
+                return;
+			}
 			var tags = msg.content.split('"');
 			var memetype = tags[0].split(" ")[1];
+            var memeid = 0;
+            Object.keys(memes).forEach(function(key) {
+                if (memetype == key.toLowerCase()){
+                    memeid = memes[key];
+                }
+            });
+            if (memeid == 0){
+                bot.sendMessage(msg.channel,"Error: Meme Name Not Found!");
+                return;
+            }
 			var Imgflipper = require("imgflipper");
-			var imgflipper = new Imgflipper(AuthDetails.imgflip_username, AuthDetails.imgflip_password);
-			imgflipper.generateMeme(meme[memetype], tags[1]?tags[1]:"", tags[3]?tags[3]:"", function(err, image){
+			var imgflipper = new Imgflipper(ConfigFile.imgflip_username, ConfigFile.imgflip_password);
+			imgflipper.generateMeme(memeid, tags[1]?tags[1]:"", tags[3]?tags[3]:"", function(err, image){
 				bot.sendMessage(msg.channel,image);
 			});
 		}
@@ -144,6 +160,162 @@ var commands = {
 		}
 	}
 };
+
+bot.on("ready", function () {
+	//loadFeeds();
+    var str = "";
+    for(var i=0;i<bot.channels.length;i++){
+        str += bot.channels[i].name + ", ";
+    }
+    console.log("Channels: " + str + "...);
+	console.log("Ready to begin! Serving in " + bot.channels.length + " channels");    
+});
+
+bot.on("disconnected", function () {
+	console.log("Disconnected!");
+	process.exit(1); //exit node.js with an error
+	//when not running in a batch file with infinite loop, use this command below to reconnect.
+	//bot.login(ConfigFile.email, ConfigFile.password);
+});
+
+//Log user status changes (online,idle,offline)
+bot.on("presence", function(user,status,gameid) {
+	console.log(user.username+" went "+status);
+});
+/* 
+bot.on("warn", function(message) {
+	console.log("Warning: "+message);
+});
+bot.on("debug", function(message) {
+	console.log("Debug: "+message);
+}); 
+*/
+var triggerlists = [
+    ["","tranny","__***WARNING, possible Tranny detected! Not suitable for anyone else besides <@99676085565800448>. ***__"],
+    ["","triggered","http://i.imgur.com/jpjcLMr.png"],
+    ["TomSuns","dnb","__***DnB SPERG ALERT***__"],
+    ["Izzoh","bruh","__***Disclaimer: WARNING, Brosplaining Detected! Not suitable for those with fuccboi allergies***__"],
+    ["GDIBass"," ex ","__**Ex talk Detected! Please seek help**__ @  __www.professional-counselling.com/getting-over-a-relationship.html__ "],
+    ["ungineer","idgaf","http://cdn.meme.am/instances/60732665.jpg"],
+    ["ungineer","dgaf","http://cdn.memegenerator.net/instances/53928498.jpg"],
+    ["ungineer","give a fuck","https://memecrunch.com/meme/1PH5/don-t-give-a-fuck/image.jpg"],
+    ["ungineer","triggered","http://cdn.meme.am/instances/61541029.jpg"],
+    ["rudedudeowns","laptop","http://i.imgflip.com/un3aj.jpg"],
+    ["rudedudeowns","squat","https://41.media.tumblr.com/3cc74236150098d65afcb9b1e43d1f68/tumblr_nazuoyvoCF1qmbxsmo1_400.jpg"],
+    ["dnytm","tinder","http://www.brobible.com/wp-content/uploads/2015/03/ap1wu.jpg"],
+    ["tehsma","reverb","http://s2.quickmeme.com/img/2b/2b787aea2af0566218a05925f148772288ea31e195394c4142b5631a7fb14b98.jpg"],
+    ["rld","viola","http://i.imgflip.com/una2l.jpg"]
+];
+
+bot.on("message", function (msg) {
+	msg.content = msg.content.toLowerCase();
+    //check if message is a command    
+	if(msg.author.id != bot.user.id && msg.content[0] === '!'){// || msg.content.indexOf(bot.user.mention()) == 0)){
+		console.log(msg.author.username + " " + msg.content);
+		var cmdTxt = msg.content.split(" ")[0].substring(1);
+		var suffix = msg.content.substring(cmdTxt.length+2);//add one for the ! and one for the space
+		if(msg.content.indexOf(bot.user.mention()) == 0){
+			cmdTxt = msg.content.split(" ")[1];
+			suffix = msg.content.substring(bot.user.mention().length+cmdTxt.length+2);
+		}
+		var cmd = commands[cmdTxt];
+		if(cmdTxt === "help"){
+			//help is special since it iterates over the other commands
+			for(var cmd in commands) {
+				var info = "__**!" + cmd + "**__";
+				var usage = commands[cmd].usage;
+				if(usage){
+					info += " *" + usage + "*";
+				}
+				var description = commands[cmd].description;
+				if(description){
+					info += "\n\t" + description;
+				}
+				bot.sendMessage(msg.author,info);
+			}
+		}
+		else if(cmd) {
+			//Begin Flood Protection
+			var author = msg.author.username;
+			//if current command is within the floodprot_ratelimitspan (POSSIBLY too soon since last message)
+			if(msg.timestamp < (ConfigFile.floodprot_ratelimitspan*1000 + global_lastmsgnameandtime[author])){
+				//if the global_commandcount is LESS than the ratelimit
+				if(global_commandcount[author] < ConfigFile.floodprot_cmdratelimit)
+					cmd.process(bot,msg,suffix);	//process their command
+				//if its equal or over (>=) (includes = because count starts at 0, and is incremented AFTER the condition).
+				else {
+					//dont process the command, and instead send them a message saying rate-limited.
+					var ratestring = " (" + ConfigFile.floodprot_cmdratelimit + " messages per " + ConfigFile.floodprot_ratelimitspan + "seconds)";
+					bot.sendMessage(msg.channel,"Rate Limit exceeded by " + msg.author.username + ratestring + 
+									". Please wait " + ConfigFile.floodprot_ratelimitspan + " seconds.");
+				}
+				global_commandcount[author]++;		//increment the count
+			}
+			//or else they've waited for enough time, so
+			else {
+				cmd.process(bot,msg,suffix);	//process their command
+				global_commandcount[author] = 1;	//reset count to 1, since we just processed a command. (or could be the first message).
+			}
+			global_lastmsgnameandtime[author] = msg.timestamp; //always store the timestamp regardless .
+			//End Flood Protecton
+		} else
+			bot.sendMessage(msg.channel, "Invalid command: " + cmdTxt);
+	} else {
+		//if message isn't a command or it is from bot, drop our own messages to prevent feedback loops
+		if(msg.author == bot.user){
+			return;
+		}
+        //TRIGGER WORD LIST PROCESSING.
+        for(var i=0;i<triggerlists.length;i++){
+            if(msg.author.username.indexOf(triggerlists[i][0]) > -1){
+                if(msg.content.indexOf(triggerlists[i][1]) > -1){
+                    bot.sendMessage(msg.channel,triggerlists[i][2]);
+                }
+            }
+        }
+		//BOT responds when @mentioned
+		if (msg.author != bot.user && msg.isMentioned(bot.user)) {
+            bot.sendMessage(msg.channel, msg.author + " you said what about me?");
+		}
+	}
+});
+
+//******************************************************************
+//                  Auxiliary Functions:
+//******************************************************************
+function get_gif(tags, func) {
+	var request = require('request');
+	//limit=1 will only return 1 gif
+	var params = {
+		"api_key": ConfigFile.giphy_api_key,
+		"rating": ConfigFile.giphy_rating,
+		"format": "json",
+		"limit": 1
+	};
+	var query = querystr.stringify(params);
+
+	if (tags !== null) {
+		query += "&q=" + tags.join('+')
+	}
+
+	request(ConfigFile.giphy_url + "?" + query, function (error, response, body) {
+		if (error || response.statusCode !== 200) {
+			console.error("giphy: Got error: " + body);
+			console.log(error);
+		}
+		else {
+			var responseObj = JSON.parse(body);
+			if(responseObj.data.length){
+				console.log("giphy: Url was: " + responseObj.data[0].url);
+				func(responseObj.data[0].id);
+			} else {
+				console.log("giphy: gif not found?");
+				func(undefined);
+			}
+		}
+	}.bind(this));
+}
+
 try{
 var rssFeeds = require("./rss.json");
 function loadFeeds(){
@@ -195,144 +367,7 @@ function rssfeed(bot,msg,url,count,full){
 	});
 }
 
-
-var bot = new Discord.Client();
-
-bot.on("ready", function () {
-	//loadFeeds();
-	console.log("Ready to begin! Serving in " + bot.channels.length + " channels");
-});
-
-bot.on("disconnected", function () {
-	console.log("Disconnected!");
-	process.exit(1); //exit node.js with an error
-	//
-	//bot.login(AuthDetails.email, AuthDetails.password);
-});
-
-var lastmsgnameandtime = {};
-var commandcount = {};
-var ratelimitnum = 5;
-var ratelimitspan = 25;
-
-bot.on("message", function (msg) {
-	//check if message is a command
-	if(msg.author.id != bot.user.id && msg.content[0] === '!'){// || msg.content.indexOf(bot.user.mention()) == 0)){
-		console.log(msg.author.username + " " + msg.content);
-		var cmdTxt = msg.content.split(" ")[0].substring(1);
-		var suffix = msg.content.substring(cmdTxt.length+2);//add one for the ! and one for the space
-		if(msg.content.indexOf(bot.user.mention()) == 0){
-			cmdTxt = msg.content.split(" ")[1];
-			suffix = msg.content.substring(bot.user.mention().length+cmdTxt.length+2);
-		}
-		var cmd = commands[cmdTxt];
-		if(cmdTxt === "help"){
-			//help is special since it iterates over the other commands
-			for(var cmd in commands) {
-				var info = "__**!" + cmd + "**__";
-				var usage = commands[cmd].usage;
-				if(usage){
-					info += " *" + usage + "*";
-				}
-				var description = commands[cmd].description;
-				if(description){
-					info += "\n\t" + description;
-				}
-				bot.sendMessage(msg.author,info);
-			}
-		}
-		else if(cmd) {
-			//Begin Flood Protection
-			var author = msg.author.username;
-			//if current command is within the ratelimitspan (POSSIBLY too soon since last message)
-			if(msg.timestamp < (ratelimitspan*1000 + lastmsgnameandtime[author])){
-				//if the commandcount is LESS than the ratelimit
-				if(commandcount[author] < ratelimitnum)
-					cmd.process(bot,msg,suffix);	//process their command
-				//if its equal or over (>=) (includes = because count starts at 0, and is incremented AFTER the condition).
-				else {
-					//dont process the command, and instead send them a message saying rate-limited.
-					var ratestring = " (" + ratelimitnum + " messages per " + ratelimitspan + "seconds)";
-					bot.sendMessage(msg.channel,"Rate Limit exceeded by " + msg.author.username + ratestring + 
-									". Please wait " + ratelimitspan + " seconds.");
-				}
-				commandcount[author]++;		//increment the count
-			}
-			//or else they've waited for enough time, so
-			else {
-				cmd.process(bot,msg,suffix);	//process their command
-				commandcount[author] = 1;	//reset count to 1, since we just processed a command. (or could be the first message).
-			}
-			lastmsgnameandtime[author] = msg.timestamp; //always store the timestamp regardless .
-			//End Flood Protecton
-		} else
-			bot.sendMessage(msg.channel, "Invalid command: " + cmdTxt);
-	} else {
-		//message isn't a command or is from us
-		//drop our own messages to prevent feedback loops
-		if(msg.author == bot.user){
-			return;
-		}
-		//corny DNB alert.
-		if(msg.author.username == 'TomSuns'){
-			if(msg.content.toUpperCase().indexOf('DNB') > -1) {
-				bot.sendMessage(msg.channel,"__***DnB SPERG ALERT***__");
-			}
-		}
-		//responds when @mentioned
-		if (msg.author != bot.user && msg.isMentioned(bot.user)) {
-				bot.sendMessage(msg.channel, msg.author.mention() + " you said what about me?");
-		}
-	}
-});
- 
-
-//Log user status changes (only shows online now)
-bot.on("presence", function(user,status,gameid) {
-	console.log(user.username+" went "+status);
-});
-//Log user status changes (only shows offline/idles now)
-bot.on("userUpdate", function(user,presenceUser,status) {
-	console.log(user.username+" went "+status);
-});
-bot.on("warn", function(message) {
-	console.log("Warning: "+message);
-});
-bot.on("debug", function(message) {
-	console.log("Debug: "+message);
-});
-
-function get_gif(tags, func) {
-	var request = require('request');
-	//limit=1 will only return 1 gif
-	var params = {
-		"api_key": giphyconfig.api_key,
-		"rating": giphyconfig.rating,
-		"format": "json",
-		"limit": 1
-	};
-	var query = qs.stringify(params);
-
-	if (tags !== null) {
-		query += "&q=" + tags.join('+')
-	}
-
-	request(giphyconfig.url + "?" + query, function (error, response, body) {
-		if (error || response.statusCode !== 200) {
-			console.error("giphy: Got error: " + body);
-			console.log(error);
-		}
-		else {
-			var responseObj = JSON.parse(body);
-			if(responseObj.data.length){
-				console.log("giphy: Url was: " + responseObj.data[0].url);
-				func(responseObj.data[0].id);
-			} else {
-				console.log("giphy: gif not found?");
-				func(undefined);
-			}
-		}
-	}.bind(this));
-}
-
-bot.login(AuthDetails.email, AuthDetails.password);
+//******************************************************************
+//           Log In at the End so all events are all ready
+//******************************************************************
+bot.login(ConfigFile.email, ConfigFile.password);

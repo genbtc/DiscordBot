@@ -1,7 +1,7 @@
 var util = require('util');
 var winston = require('winston');
 var wolfram_node = require('wolfram');
-var AuthDetails = require("./auth.json");
+var AuthDetails = require("./config.json");
 
 
 function WolframPlugin () {

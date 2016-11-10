@@ -19,11 +19,12 @@ Commands added by genBTC:
 - Responds perfectly in a private message, and also any !help commands get responded to in PM to not clutter chat.
 - Rate Limit/Flood Protection. Variables are shown in Line 215 ratelimitnum (X),Line 216 ratelimitspan (Y). 
 - The Rate limit will trigger if the same person has issued more than (X) commands in (Y) seconds. If they exceed this limit, they will have to wait for (Y) seconds. If they issue another command, the waiting period resets and they have to wait an additional full (Y) seconds.
-- DNB Sperg Alert for a person named TomSuns, any message with "DNB" in it will cause the bot to give a channel-wide text alert.
+# Channel Specific/Personal Features (remove if you aren't me):
+- DNB Sperg Alert for Suns, any message with "DNB" in it will cause the bot to give a channel-wide text alert.
+- Tranny Alert for Emmet Brown
+- Bruh Alert for Izzoh
 
-Notes: When a "Disconnected" event is received, you can choose to process.exit() or re-login. I chose process.exit() because the bot is running inside a batch file called Launch.bat which was provided, and that will just re-launch the bot if it dies. I did not bother to look up how to properly do a loop in batch-script, so LOL. maybe will fix this later now that I posted it online its sort of embarassing.
-
-Notes: Discord.JS 5.00 had an error in the "presence" event, and this version has a patch to continue logging status changes to the text file.
+Notes: When a "Disconnected" event is received, you can choose to process.exit() or re-login. I chose process.exit() because the bot is running inside a batch file called Launch.bat which was provided, and that will just re-launch the bot if it dies.
 
 Notes: unused-commands.txt contain all of the original commands that I had commented out because I don't need. (except !stock, i deleted that one accidentally).
 ## Todo:

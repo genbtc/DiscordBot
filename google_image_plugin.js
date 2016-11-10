@@ -1,7 +1,3 @@
-var util = require('util');
-var winston = require('winston');
-
-
 function GoogleImagePlugin () {
 	this.request = require('request');
 }
@@ -19,7 +15,7 @@ GoogleImagePlugin.prototype._respondToChatMessage = function(roomId, chatterId, 
 GoogleImagePlugin.prototype.respond = function(query, channel, bot) {
 	//just gets the first result
 	var page = 0; //looks like 4 results each 'page'
-	this.request("http://ajax.googleapis.com/ajax/services/search/images?v=1.0&q=" + (query.replace(/\s/g, '+')) + "&start=" + page, function(err, res, body) {
+	this.request("https://ajax.googleapis.com/ajax/services/search/images?v=1.0&q=" + (query.replace(/\s/g, '+')) + "&start=" + page, function(err, res, body) {
 		var data, error;
 		try {
 			data = JSON.parse(body);
@@ -27,7 +23,10 @@ GoogleImagePlugin.prototype.respond = function(query, channel, bot) {
 			console.log(error)
 			return;
 		}
-		if (data.responseData.results.length == 0){
+        if(!data.responseData){
+            bot.sendMessage(channel, "Error " + data.responseStatus + ": " + data.responseDetails);
+        }
+        else if (!data.responseData || data.responseData.results.length == 0){
 			bot.sendMessage(channel, "No result for '" + query + "'");
 			return
 		}

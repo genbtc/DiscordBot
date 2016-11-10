@@ -2,13 +2,13 @@
 var util = require('util');
 var winston = require('winston');
 var youtube_node = require('youtube-node');
-var AuthDetails = require("./auth.json");
+var AuthDetails = require("./config.json");
 
 
 function YoutubePlugin () {
 	this.RickrollUrl = 'http://www.youtube.com/watch?v=oHg5SJYRHA0';
 	this.youtube = new youtube_node();
-	this.youtube.setKey(AuthDetails.youtube_api_key);
+	this.youtube.setKey(AuthDetails.google_api_key);
 };
 
 
