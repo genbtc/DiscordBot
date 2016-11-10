@@ -32,3 +32,4 @@ auth.json
 #other runtime config files
 rss.json
 config.js
+config.json
