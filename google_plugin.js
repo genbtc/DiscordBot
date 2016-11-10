@@ -7,12 +7,12 @@ function GoogleSearchPlugin () {
 GoogleSearchPlugin.prototype.respond = function (query, channel, bot) {
     this.google(query, function (err, next, links){
         if (err)
-            bot.sendMessage(channel, "¯\\_(ツ)_/¯");
+            channel.sendMessage("¯\\_(ツ)_/¯");
 
         var i=0;
         while(links[i].link == null)
             i++;
-        bot.sendMessage(channel,links[i].link);
+        channel.sendMessage(links[i].link);
     });
 };
     
