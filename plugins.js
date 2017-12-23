@@ -1,4 +1,4 @@
-
+//edited by genBTC on Nov 13th to work with Compiled Node as a .exe package
 var fs = require('fs'),
     path = require('path');
 function getDirectories(srcpath) {
@@ -7,17 +7,9 @@ function getDirectories(srcpath) {
     });
 }
 
-var plugin_folders;
-var plugin_directory;
-var exec_dir;
-try { //try loading plugins from a non standalone install first
-    plugin_directory = "./plugins/";
-    plugin_folders = getDirectories(plugin_directory);
-} catch(e){//load paths for an Electrify install
-    exec_dir = path.dirname(process.execPath) + "/resources/default_app/"; //need this to change node prefix for npm installs
-    plugin_directory = path.dirname(process.execPath) + "/resources/default_app/plugins/";
-    plugin_folders = getDirectories(plugin_directory);
-}
+var plugin_directory = "./plugins/";
+var plugin_folders = getDirectories(plugin_directory);
+var exec_dir = path.dirname(process.execPath) + "/resources/default_app/"; //need to use this to change node prefix for npm installs
 
 exports.init = function(){
     preload_plugins();
@@ -39,20 +31,17 @@ function preload_plugins(){
     var npm = require("npm");
     for (var i = 0; i < plugin_folders.length; i++) {
         try{
-            require(plugin_directory + plugin_folders[i]);
+            var pfd = plugin_directory + plugin_folders[i];
+            require(pfd)
         } catch(e) {
-            deps = deps.concat(createNpmDependenciesArray(plugin_directory + plugin_folders[i] + "/package.json"));
+            //console.log("Plugin folder is: " + pfd);
+            deps = deps.concat(createNpmDependenciesArray(pfd + "/package.json"));
         }
     }
     if(deps.length > 0) {
         npm.load({
             loaded: false
         }, function (err) {
-            // catch errors
-            if (plugin_directory != "./plugins/"){ //install plugin modules for Electrify builds
-                npm.prefix = exec_dir;
-                console.log(npm.prefix);
-            }
             npm.commands.install(deps, function (er, data) {
                 if(er){
                     console.log(er);

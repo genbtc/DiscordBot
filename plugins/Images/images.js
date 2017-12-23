@@ -1,5 +1,5 @@
 var request = require("request");
-var AuthDetails = require("../../auth.json");
+var AuthDetails = require("../../data/auth.json");
 
 exports.commands = [
 	"image", //gives top image from google search
@@ -26,12 +26,10 @@ exports.image = {
 				return;
 			}
 			if(!data){
-				console.log(data);
 				msg.channel.sendMessage( "Error:\n" + JSON.stringify(data));
 				return;
 			}
 			else if (!data.items || data.items.length == 0){
-				console.log(data);
 				msg.channel.sendMessage( "No result for '" + args + "'");
 				return;
 			}
@@ -60,12 +58,10 @@ exports.rimage = {
 				return;
 			}
 			if(!data){
-				console.log(data);
 				msg.channel.sendMessage( "Error:\n" + JSON.stringify(data));
 				return;
 			}
 			else if (!data.items || data.items.length == 0){
-				console.log(data);
 				msg.channel.sendMessage( "No result for '" + args + "'");
 				return;
 			}
@@ -90,18 +86,15 @@ exports.ggif = {
 				return;
 			}
 			if(!data){
-				console.log(data);
 				msg.channel.sendMessage( "Error:\n" + JSON.stringify(data));
 				return;
 			}
 			else if (!data.items || data.items.length == 0){
-				console.log(data);
 				msg.channel.sendMessage( "No result for '" + args + "'");
 				return;
 			}
 			var randResult = data.items[Math.floor(Math.random() * data.items.length)];
 			msg.channel.sendMessage( randResult.title + '\n' + randResult.link);
 		});
-
 	}
 }

@@ -1,0 +1,6 @@
+{
+  "debug": false,
+  "commandPrefix": "!",
+  "floodprot_cmdratelimit": 5,
+  "floodprot_ratelimitspan": 10
+}
