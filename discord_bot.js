@@ -66,6 +66,12 @@ try {
     console.log("couldn't load wolfram plugin!\n" + e.stack);
 }
 try {
+    var sp = require("./plugins/spotify_plugin");
+    var spotify_plugin = new sp();
+} catch (e) {
+    console.log("couldn't load spotify plugin!\n" + e.stack);
+}
+try {
     var qs = require("querystring");
 } catch (e) {
     console.log("couldn't load querystring plugin!\n" + e.stack);
@@ -208,6 +214,13 @@ var commands = {
             google_plugin.respond(suffix, msg.channel, bot);
         }
     },
+    "spotify": {
+        usage: "<spotify search>",
+        description: "gets first track result from spotify",
+        process: function(bot, msg, suffix) {
+            spotify_plugin.respond(suffix, msg.channel, bot);
+        }
+    },
     "aliases": {
         description: "Lists all Stored Aliases",
         process: function(bot, msg, suffix) {
@@ -271,8 +284,17 @@ var commands = {
         process: function(bot, msg, suffix) {
             if (msg.author.id == '100558336721711104') //genBTC owner
                 msg.channel.sendMessage(suffix);
+            if (msg.author.id == '395134211415080961') //Fuccbot himself
+                msg.channel.sendMessage(suffix);
         }
     },
+    "crypto": {
+        usage: "<message>",
+        description: "ask dingus for crypto BTC",
+        process: function(bot, msg, suffix) {
+            msg.channel.sendMessage("+crypto BTC");
+        }
+    },    
     "delete": {
         usage: "do not abuse or it will be removed",
         description: "bot deletes its own last message",
