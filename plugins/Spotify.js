@@ -44,9 +44,6 @@ function makeResponse(hollaback) {
     };
 }
 this._credentials = {};
-var setAccessToken = function (token) {
-    module.exports.setAccessToken(token);
-}
 
 module.exports = {
     setCredentials: function (credentials) {
@@ -234,13 +231,14 @@ module.exports = {
      * @param {Function} The hollaback that'll be invoked once there's data
      */
     get: function (query, hollaback) {
+        var token = this.getAccessToken();
         var opts = {
             host: "api.spotify.com",
             path: encodeURI(query),
             method: "GET",
             headers: {
                 "Accept": "application/json",
-                "Authorization": "Bearer " + this.getAccessToken()
+                "Authorization": "Bearer " + token
             }
         },
         hrequest = https.request(opts, makeResponse(hollaback));
