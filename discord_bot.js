@@ -4,7 +4,7 @@
 //Style/Formatted/Re-Edited December 22,2017
 //Requires Discord.JS Version 10
 try {
-    var fs = require('fs');    
+    var fs = require('fs');
     var Discord = require("discord.js");
 } catch (e) {
     console.log(e.stack);
@@ -85,6 +85,18 @@ try {
     var htmlToText = require('html-to-text');
 } catch (e) {
     console.log("couldn't load html-to-text plugin!\n" + e.stack);
+}
+try {
+    var winston = require("winston");
+    const winstonLogfile1 = 'logs/chat.log';
+    const winstonLogfile2 = 'logs/users.log';
+    winston.add(winston.transports.File, { filename: winstonLogfile1, level: 'info', name:'info' });
+//    winston.remove(winston.transports.Console);
+    winston.add(winston.transports.File, { filename: winstonLogfile2, level: 'error', name:'error' });
+    console.log('Logging to ' + winstonLogfile1 + ' and ' + winstonLogfile2 +
+	' with Logcord - A Discord.js chat logging bot by Anidox - github.com/theanidox/Logcord');
+} catch (e) {
+    console.log("couldn't load winston (logging) plugin!\n" + e.stack);
 }
 
 // Load Custom Permissions config file:
@@ -207,6 +219,7 @@ var global_commandcount = {};
 
 //Commands to interact with the bot:
 var commands = {
+/*
     "google": {
         usage: "<google search>",
         description: "gets first result from google",
@@ -214,6 +227,8 @@ var commands = {
             google_plugin.respond(suffix, msg.channel, bot);
         }
     },
+*/
+    /*
     "spotify": {
         usage: "<spotify search>",
         description: "gets first track result from spotify",
@@ -221,6 +236,7 @@ var commands = {
             spotify_plugin.respond(suffix, msg.channel, bot);
         }
     },
+    */
     "aliases": {
         description: "Lists all Stored Aliases",
         process: function(bot, msg, suffix) {
@@ -263,7 +279,7 @@ var commands = {
             msg.channel.sendMessage(msg.author.id);
         }
     },
-
+/*
     "youtube": {
         usage: "<video tags>",
         description: "gets youtube video matching tags",
@@ -271,6 +287,7 @@ var commands = {
             youtube_plugin.respond(suffix, msg.channel, bot);
         }
     },
+*/
     "taobao": {
         usage: "<message>",
         description: "print taobao search string",
@@ -294,7 +311,7 @@ var commands = {
         process: function(bot, msg, suffix) {
             msg.channel.sendMessage("+crypto BTC");
         }
-    },    
+    },
     "delete": {
         usage: "do not abuse or it will be removed",
         description: "bot deletes its own last message",
@@ -887,26 +904,33 @@ function checkMessageForCommand(msg, isEdit) {
 }
 
 //Check messages for commands - Run the function above.
-bot.on("message", (msg) => checkMessageForCommand(msg, false));
+//bot.on("message", (msg) => checkMessageForCommand(msg, false));
+bot.on('message', (msg) => {
+    checkMessageForCommand(msg, false);
+  winston.log('info', `${msg.guild} , ${msg.channel.name} , @${msg.author.username}#${msg.author.discriminator} ${msg.author} , ${msg.createdAt} , ${msg.content}`);
+});
 bot.on("messageUpdate", (oldMessage, newMessage) => {
     checkMessageForCommand(newMessage, true);
 });
 
 //Log user status changes
-bot.on("presence", function(user, status, gameId) {
-    console.log(user + " went " + status);
+bot.on("presenceUpdate", (olduser, newuser) => {
+var isChanged = (olduser.presence.status != newuser.presence.status);
+if (isChanged)
+    winston.log('error', `@${newuser.user.username}#${newuser.user.discriminator} ${newuser.user} , ${newuser.presence.status}`);
     try {
+        var status = newuser.presence.status;
         if (status != 'offline') {
-            if (messagebox.hasOwnProperty(user.id)) {
-                console.log("found message for " + user.id);
-                var message = messagebox[user.id];
-                var channel = bot.channels.get("id", message.channel);
-                delete messagebox[user.id];
+            if (messagebox.hasOwnProperty(newuser.user.id)) {
+                console.log("found message for " + newuser.user.id);
+                var message = messagebox[newuser.user.id];
+                delete messagebox[newuser.user.id];
                 messagebox.saveFile();
+                var channel = bot.channels.get("id", message.channel);
                 bot.sendMessage(channel, message.content);
             }
         }
-    } catch (e) {}
+    } catch (e) {console.error(e)}
 });
 
 //Giphy gif function

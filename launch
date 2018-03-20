@@ -1,0 +1,5 @@
+#!/bin/bash
+cd ~/discordbot
+screen -dmS "fuccbot"
+screen -S "fuccbot" -p 0 -X stuff "./launch-step2$(printf \\r)"
+echo "Launching Fuccbot... from Cron Script"

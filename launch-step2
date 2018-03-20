@@ -1,0 +1,6 @@
+#!/bin/bash
+while [ 0 ];
+do /home/linuxbrew/.linuxbrew/bin/node /home/genr8_/discordbot/discord_bot.js;
+echo "==The bot got shut down - Restarting in 2 seconds!!!!!!!!!!";
+sleep 2;
+done

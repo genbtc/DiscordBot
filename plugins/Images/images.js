@@ -1,10 +1,18 @@
 var request = require("request");
 var AuthDetails = require("../../data/auth.json");
+try {
+	var yt = require("../youtube_plugin");
+	var youtube_plugin = new yt();
+} catch(e){
+	console.log("couldn't load youtube plugin!\n"+e.stack);
+}
 
 exports.commands = [
 	"image", //gives top image from google search
 	"rimage", //gives random image from google search
-	"ggif" //gives random gif from google search
+	"ggif", //gives random gif from google search
+        "youtube",
+        "google"
 ];
 
 exports.image = {
@@ -97,4 +105,42 @@ exports.ggif = {
 			msg.channel.sendMessage( randResult.title + '\n' + randResult.link);
 		});
 	}
+}
+
+exports.youtube = {
+	usage : "<video tags>",
+	description : "gets youtube video matching tags",
+	process : function(bot, msg, suffix){
+		youtube_plugin.respond(suffix, msg.channel, bot);
+	}
+}
+
+exports.google = {
+        usage : "<google search query>",
+        description : "get first link result from google",
+        process : function(bot, msg, args) {
+                if(!AuthDetails || !AuthDetails.youtube_api_key || !AuthDetails.google_custom_search){
+                        msg.channel.sendMessage( "Image search requires both a YouTube API key and a Google Custom Search key!");
+                        return;
+                }
+		request("https://www.googleapis.com/customsearch/v1?key=" + AuthDetails.youtube_api_key + "&cx=" + AuthDetails.google_custom_search + "&q=" + (args.replace(/\s/g, '+')) + "&alt=json&num=10", function(err, res, body) {
+                        var data, error;
+                        try {
+                                data = JSON.parse(body);
+                        } catch (error) {
+                                console.log(error)
+                                return;
+                        }
+                        if(!data){
+                                msg.channel.sendMessage( "Error:\n" + JSON.stringify(data));
+                                return;
+                        }
+                        else if (!data.items || data.items.length == 0){
+                                msg.channel.sendMessage( "No result for '" + args + "'");
+                                return;
+                        }
+                        var randResult = data.items[Math.floor(Math.random() * data.items.length)];
+                        msg.channel.sendMessage( randResult.title + '\n' + randResult.link);
+                });
+        }
 }

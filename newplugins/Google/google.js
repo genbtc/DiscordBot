@@ -109,7 +109,6 @@ exports.ggif = {
 			var randResult = data.items[Math.floor(Math.random() * data.items.length)];
 			msg.channel.sendMessage( randResult.title + '\n' + randResult.link);
 		});
-
 	}
 }
 
